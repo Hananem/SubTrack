@@ -1,0 +1,95 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+model Subscription {
+  id           Int                @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Float
+  currency     String             @default("USD")
+  billingCycle BillingCycle
+  startDate    DateTime
+  nextPayment  DateTime
+  category     SubscriptionCategory @default(OTHER)
+  status       SubscriptionStatus @default(ACTIVE)
+  remindDaysBefore Int            @default(2)
+  notifyEnabled    Boolean        @default(true)
+  logoUrl      String?
+  websiteUrl   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
+
+  @@map("subscriptions")
+}
+
+model Notification {
+  id             Int                @id @default(autoincrement())
+  message        String
+  type           NotificationType   @default(REMINDER)
+  isRead         Boolean            @default(false)
+  sentAt         DateTime           @default(now())
+
+  subscriptionId Int
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+  WEEKLY
+  QUARTERLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionCategory {
+  STREAMING
+  PRODUCTIVITY
+  DEVELOPMENT
+  GAMING
+  CLOUD
+  FITNESS
+  NEWS
+  EDUCATION
+  OTHER
+}
+
+enum NotificationType {
+  REMINDER
+  PAYMENT_DUE
+  EXPIRED
+}
